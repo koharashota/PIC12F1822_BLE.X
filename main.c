@@ -34,30 +34,49 @@
 #pragma config BORV = HI        // 電源電圧降下常時監視電圧(2.5V)設定(HI)
 #pragma config LVP = OFF        // 低電圧プログラミング機能使用しない(OFF)
 
-#define _XTAL_FREQ 16000000
-#define tx RA5 // シリアル通信送信用
+#define _XTAL_FREQ 4000000
+#define tx RA4 // シリアル通信送信用
+#define rx RA5 // シリアル通信送信用
+#define test RA2
 static void pic_init();
 
 void main(void)
 {
-  tx = 1;
   //初期設定
   pic_init();
   while(1)
   {
-    tx = 1;
+    //while(TXIF==0) ; // 送信可能になるまで待つ    *1)
+    TXREG = 0x30;
+    test = 1;
     __delay_ms(2000);
-    tx = 0;
-    __delay_ms(2000);
+    TXREG = 0x40;
+    test = 0;
+    __delay_ms(1000);
   }
 }
 
 
 static void pic_init(){
-//clock
-OSCCON = 0b11110000; //32MHz(4xPLL=enable FOSC=8MHz OSCSetting=CONFIGbit)
-//IO
-ANSELA= 0x00;	// set all RA to digital pin
-TRISA = 0x00; // RAを全てアウトプット
-PORTA = 0x00;
+  //clock
+  //OSCCON = 0b11110000; //32MHz(4xPLL=enable FOSC=8MHz OSCSetting=CONFIGbit)
+  //OSCCON = 0b01111010; //16MHz
+  OSCCON = 0b01101010; // 内部オシレーター 4MHz
+  //IO
+  ANSELA= 0x00;	// set all RA to digital pin
+  //TRISA = 0x00; // RAを全てアウトプット
+  TRISA = 0b00101011;			// IOポートRA0(AN0),RA1(SCL),RA5(RX)を入力モード（RA3は入力専用）、RA2(SDA), RA4(TX)を出力モード
+  PORTA = 0x00;
+  // USART機能の設定を行う
+  RXDTSEL = 1;   // 2番ピン(RA5)をRX受信ピンとする
+  TXCKSEL = 1;   // 3番ピン(RA4)をTX送信ピンとする
+  SPBRG = 51; //9600bps (FOSC=8MHz (without PLLx4))
+  TXEN = 1; // 送信を許可するかの指定ビット
+  SYNC = 0; // ＵＳＡＲＴモードの指定ビット
+  SPEN = 1;  // シリアルピン使用の指定ビット
+  CREN = 1; // 連続受信許可の指定ビット
+  RCIE=1; //RC intrrupt enable
+
+  TXSTA  = 0b00100100 ;     // 送信情報設定：非同期モード ８ビット・ノンパリティ
+  RCSTA  = 0b10010000 ;     // 受信情報設定
 }
