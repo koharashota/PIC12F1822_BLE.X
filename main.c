@@ -19,7 +19,7 @@
 #pragma config FOSC = INTOSC    // 内部ｸﾛｯｸを使用する(INTOSC)
 #pragma config WDTE = OFF       // ｳｵｯﾁﾄﾞｯｸﾞﾀｲﾏｰ無し(OFF)
 #pragma config PWRTE = ON       // 電源ONから64ms後にﾌﾟﾛｸﾞﾗﾑを開始する(ON)
-#pragma config MCLRE = ON      // 外部ﾘｾｯﾄ信号は使用せずにﾃﾞｼﾞﾀﾙ入力(RA5)ﾋﾟﾝとする(OFF)
+#pragma config MCLRE = OFF      // 外部ﾘｾｯﾄ信号は使用せずにﾃﾞｼﾞﾀﾙ入力(RA5)ﾋﾟﾝとする(OFF)
 #pragma config CP = OFF         // ﾌﾟﾛｸﾞﾗﾑﾒﾓﾘｰを保護しない(OFF)
 #pragma config CPD = OFF        // ﾃﾞｰﾀﾒﾓﾘｰを保護しない(OFF)
 #pragma config BOREN = ON       // 電源電圧降下常時監視機能ON(ON)
@@ -35,9 +35,10 @@
 #pragma config LVP = OFF        // 低電圧プログラミング機能使用しない(OFF)
 
 #define _XTAL_FREQ 4000000
+#define test RA2
+#define reed_switch RA3
 #define tx RA4 // シリアル通信送信用
 #define rx RA5 // シリアル通信送信用
-#define test RA2
 static void pic_init();
 
 void main(void)
@@ -46,12 +47,14 @@ void main(void)
   pic_init();
   while(1)
   {
-    //while(TXIF==0) ; // 送信可能になるまで待つ    *1)
-    TXREG = 0x30;
-    test = 1;
-    __delay_ms(2000);
-    TXREG = 0x40;
-    test = 0;
+    if(reed_switch == 1){
+      //while(TXIF==0) ; // 送信可能になるまで待つ    *1)
+      test = 1;
+      TXREG = 0x40;
+    } else {
+      test = 0;
+      TXREG = 0x30;
+    }
     __delay_ms(1000);
   }
 }
@@ -67,6 +70,7 @@ static void pic_init(){
   //TRISA = 0x00; // RAを全てアウトプット
   TRISA = 0b00101011;			// IOポートRA0(AN0),RA1(SCL),RA5(RX)を入力モード（RA3は入力専用）、RA2(SDA), RA4(TX)を出力モード
   PORTA = 0x00;
+  WPUA = 0b00001000; // RA3は内部プルアップ抵抗を指定する
   // USART機能の設定を行う
   RXDTSEL = 1;   // 2番ピン(RA5)をRX受信ピンとする
   TXCKSEL = 1;   // 3番ピン(RA4)をTX送信ピンとする
