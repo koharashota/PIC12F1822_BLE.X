@@ -34,7 +34,7 @@
 #pragma config BORV = HI        // 電源電圧降下常時監視電圧(2.5V)設定(HI)
 #pragma config LVP = OFF        // 低電圧プログラミング機能使用しない(OFF)
 
-#define _XTAL_FREQ 4000000
+#define _XTAL_FREQ  8000000
 #define test RA2
 #define reed_switch RA3
 #define tx RA4 // シリアル通信送信用
@@ -47,13 +47,13 @@ void main(void)
   pic_init();
   while(1)
   {
+    while(TXIF == 0){}
     if(reed_switch == 1){
-      //while(TXIF==0) ; // 送信可能になるまで待つ    *1)
       test = 1;
-      TXREG = 0x40;
+      TXREG = 1;
     } else {
       test = 0;
-      TXREG = 0x30;
+      TXREG = 0;
     }
     __delay_ms(1000);
   }
@@ -62,9 +62,7 @@ void main(void)
 
 static void pic_init(){
   //clock
-  //OSCCON = 0b11110000; //32MHz(4xPLL=enable FOSC=8MHz OSCSetting=CONFIGbit)
-  //OSCCON = 0b01111010; //16MHz
-  OSCCON = 0b01101010; // 内部オシレーター 4MHz
+  OSCCON = 0b01110000;      // 8MHz
   //IO
   ANSELA= 0x00;	// set all RA to digital pin
   //TRISA = 0x00; // RAを全てアウトプット
